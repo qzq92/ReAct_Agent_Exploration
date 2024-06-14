@@ -11,7 +11,7 @@ from langchain.agents.format_scratchpad.log import format_log_to_str
 
 load_dotenv()
 
-# tool decorator that converts function to langchain Tool object
+# tool decorator that converts function to langchain Tool object for agent use
 @tool
 def get_text_length(text: str) -> int:
     """Returns the length of a text by characters upon stripping newlines, single/double quotation marks."""
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         tool_names=", ".join([t.name for t in tools]),
     )
 
-    # Tell LLM to avoid creative answer ,and stop generating words once it reaches 'observation' as its output before reaching final answer. Firstly, it is to ensure alignment with the input expected of parser.
+    # Tell LLM to avoid creative answer ,and stop generating words once it encounters 'observation' as its output before reaching final answer. Firstly, it is to ensure alignment with the input expected of parser.
     llm=ChatOpenAI(temperature=0, model_kwargs={"stop":["\nObservation", "Observation"]})
 
     # History to be used by agents
