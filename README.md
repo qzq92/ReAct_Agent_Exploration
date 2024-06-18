@@ -12,11 +12,12 @@ Please create an *.env* file with the following parameters. PYTHONPATH is requir
 
 ```
 OPENAI_API_KEY=<YOUR API KEY>
-PYTHONPATH=<Absolute path to the directory where this project is cloned>
+PYTHONPATH = <Absolute path to the directory where this project is cloned>
 
 # Optional if you are not using LangSmith for tracking llm utilisation related metrics
-LANGCHAIN_API_KEY=<YOUR API KEY>
-LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY = <YOUR API KEY>
+LANGCHAIN_TRACING_V2 = true
+LANGCHAIN_PROJECT = <NAME FOR YOUR PROJECT>
 ```
 
 For more information on Langsmith, refer to https://www.langchain.com/langsmith
