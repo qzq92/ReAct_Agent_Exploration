@@ -40,7 +40,7 @@ python main_agent_scratchpad.py
     - ChatOpenAI
     - PromptTemplate
     - CallBacks
-    - Schemas: AgentFinish and AgentAction
+    - Agent Schemas: AgentFinish and AgentAction
 
 ## Acknowledgement and Credits
 
