@@ -9,6 +9,8 @@ from langchain.tools.render import render_text_description
 from langchain.agents.output_parsers import ReActSingleInputOutputParser
 from langchain.agents.format_scratchpad.log import format_log_to_str
 
+from callbacks import AgentCallbackHandler
+
 load_dotenv()
 
 # tool decorator that converts function to langchain Tool object for agent use
@@ -77,8 +79,13 @@ if __name__ == "__main__":
         tool_names=", ".join([t.name for t in tools]),
     )
 
-    # Tell LLM to avoid creative answer ,and stop generating words once it encounters 'observation' as its output before reaching final answer. Firstly, it is to ensure alignment with the input expected of parser.
-    llm=ChatOpenAI(temperature=0, model_kwargs={"stop":["\nObservation", "Observation"]})
+    # Tell LLM to avoid creative answers with temp=0,and stop generating words once it encounters 'observation' token. This is to align with the input expected of parser and avoid errors as a result of both occurrence of observation and final answer tags
+
+    #Include callbacks during llm events
+    llm=ChatOpenAI(
+        temperature=0,
+        model_kwargs={"stop":["\nObservation", "Observation"]},
+        callbacks=[AgentCallbackHandler()])
 
     # History to be used by agents
     intermediate_steps = []
@@ -92,41 +99,35 @@ if __name__ == "__main__":
         | ReActSingleInputOutputParser()
     )
     
-    # Use invoke to test a given input. Ideally when doing invoke it should either have final answer or a parsible action/action input and not both.
+    # Implement while loop to see steps of AgentActions until AgentFinish is obtained.
+    agent_step = ""
+    while not isinstance(agent_step, AgentFinish):
+        # Use invoke to test a given input. Ideally when doing invoke it should either have final answer or a parsible action/action input and not both.
 
-    # Notes: langchain_core.exceptions.OutputParserException: Parsing LLM output produced both a final answer and a parse-able action:: indicates you get post parsable action and answer at the same time, confusing the LLM on what to do. From my experience working with agents I noticed that subtle changes like changing a couple of words/ characters can make a difference when working on a specific usecase.
+        # Notes: langchain_core.exceptions.OutputParserException: Parsing LLM output produced both a final answer and a parse-able action:: indicates you get post parsable action and answer at the same time, confusing the LLM on what to do. From my experience working with agents I noticed that subtle changes like changing a couple of words/ characters can make a difference when working on a specific usecase.
+        
+        # Eventually after some time "wiggling" with the prompt and doing a bit of prompt engineering I came out with this prompt. Why is it working and failing here and there ? because LLMs are statistical creatures and are not idempotent and we cannot assume that we will get the same output for the same input.
+        agent_step: Union[AgentAction,AgentFinish] = agent.invoke(
+            {
+                "input": "What is the length in characters of the text DOG?",
+                "agent_scratchpad": intermediate_steps,
+            }
+        )
+        print(agent_step)
     
-    # Eventually after some time "wiggeling" with the prompt and doing a bit of prompt engineering I came out with this prompt. Why is it working and failing here and there ? because LLMs are statistical creatures and are not idempotent and we cannot assume that we will get the same output for the same input.
-    agent_step: Union[AgentAction,AgentFinish] = agent.invoke(
-        {
-            "input": "What is the length in characters of the text DOG?",
-            "agent_scratchpad": intermediate_steps,
-        }
-    )
-    print(agent_step)
-    
-    # Identify the tool use when agent is taking actions
-    if isinstance(agent_step, AgentAction):
-        # Get info on tool name used by agent
-        tool_name = agent_step.tool
-        tool_to_use = find_tool_by_name(tools=tools,tool_name=tool_name)
-        tool_input = agent_step.tool_input
+        # Identify the tool use when agent is taking actions
+        if isinstance(agent_step, AgentAction):
+            # Get info on tool name used by agent
+            tool_name = agent_step.tool
+            tool_to_use = find_tool_by_name(tools=tools,tool_name=tool_name)
+            tool_input = agent_step.tool_input
 
-        # Get observation
-        observation = tool_to_use.func(str(tool_input))
-        print(f"{observation=}")
-        print("Updating history with observation")
+            observation = tool_to_use.func(str(tool_input))
+            print(f"{observation=}")
+            print("Updating history with observation")
 
-        # Update history with agentaction and string as tuple
-        intermediate_steps.append((agent_step, str(observation)))
+            # Update history with agentaction and string as tuple
+            intermediate_steps.append((agent_step, str(observation)))
 
-    print("Invoking agent action with known steps")
-    # Repeat to see the changes. ReAct Loop with history
-    agent_step: Union[AgentAction,AgentFinish] = agent.invoke(
-        {"input": "What is the length in characters of the text DOG?",
-         "agent_scratchpad": intermediate_steps,
-        }
-    )
-    print(agent_step)
     if isinstance(agent_step, AgentFinish):
         print(agent_step.return_values)

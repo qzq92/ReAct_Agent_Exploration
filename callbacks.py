@@ -1,7 +1,8 @@
+# File containing logic to log all LLM calls
+from typing import Dict, Any, List
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import LLMResult
 
-from typing import Dict, Any, List
 
 # LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. This is useful for logging, monitoring, streaming, and other tasks (event driven). Handled specifically by basecallbackhandler class
 class AgentCallbackHandler(BaseCallbackHandler):
@@ -11,13 +12,14 @@ class AgentCallbackHandler(BaseCallbackHandler):
         """Run when LLM starts running.
 
         Args:
-            serialized (Dict[str, Any]): _description_
-            prompts (List[str]): _description_
+            serialized (Dict[str, Any]): Dictionary of serialised input.
+            prompts (List[str]): Prompts used by agent.
 
-        Returns:
-            Any: _description_
         """
-        pass
+        print(f"***Prompt to LLM was:***\n{prompts[0]}")
+        print("*********")
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> Any:
-        """Run when LLm ends running"""
+        """Run when LLm ends running"""        
+        print(f"***LLM Response:***\n{response.generations[0][0].text}")
+        print("*********")
