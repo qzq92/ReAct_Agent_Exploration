@@ -1,6 +1,6 @@
 # ReAct Agents Exploration
 
-This is a simple exploration of ReAct Agents
+This is a simple exploration of ReAct Agents offered by LangChain Framework.
 
 ## API used
 
